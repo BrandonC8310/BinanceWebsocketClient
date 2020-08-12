@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import javax.websocket.*;
 import java.io.IOException;
 
-@javax.websocket.ClientEndpoint
-public class Client extends WSClientEndpoint {
+
+public abstract class Client extends WSClientEndpoint {
 
     private Orderbook orderbook = null;
     private boolean first_valid_update = false;
@@ -22,9 +22,9 @@ public class Client extends WSClientEndpoint {
 
     }
 
-    public void add_messageHandler() {
+    public void generate__messageHandler() {
 
-        WSClientEndpoint.MessageHandler messageHandler = message -> {
+        WSClientEndpoint.MyMessageHandler messageHandler = message -> {
             ObjectMapper objectMapper = new ObjectMapper();
             UpdateEvent update = objectMapper.readValue(message, UpdateEvent.class);
 
@@ -55,22 +55,19 @@ public class Client extends WSClientEndpoint {
             } else if (update.get_first_id() == lastUpdateId + 1) {
 //                System.out.println("process this update");
                 update_orderbook(update);
-                System.out.println(orderbook);
                 lastUpdateId = update.get_final_id();
                 orderbook.set_lastUpdateId(lastUpdateId);
+                System.out.println(orderbook);
             } else {
                 System.out.println("Out of sync, abort");
             }
 
         };
 
-        this.addMessageHandler(messageHandler);
+        this.add_MessageHandler(messageHandler);
     }
 
-    public void close() throws IOException {
 
-        this.userSession.close();
-    }
 
 
 
@@ -87,35 +84,50 @@ public class Client extends WSClientEndpoint {
     }
 
 
-    @Override
-    @OnOpen
-    public void onOpen(Session userSession) {
-        System.out.println("Connected to Binance");
-        this.userSession = userSession;
-    }
+    public double get_average_price(double quantity) {
 
-    @Override
-    @OnClose
-    public void onClose(Session userSession, CloseReason reason) {
-        System.out.println("Disconnected to Binance");
-        this.userSession = null;
-    }
-
-    @Override
-    @OnMessage
-    public void onMessage(String message) throws IOException {
-
-        if (this.messageHandler != null) {
-            this.messageHandler.handleMessage(message);
+        if (quantity > this.orderbook.get_total_quantity()) {
+            return -1;
+        } else if (quantity <= 0) {
+            return -2;
         }
+
+        double current_price = 0;
+        double current_quantity = 0;
+        double accumulated_quantity = 0;
+        double total = 0;
+
+        for (Order o : orderbook.get_ask_orders()) {
+            current_quantity += o.get_quantity();
+            accumulated_quantity += current_quantity;
+            current_price += o.get_price();
+
+
+            if (accumulated_quantity >= quantity) {
+                total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
+                return total / quantity;
+            }
+
+            total = current_price * current_quantity;
+        }
+
+        return 0;
     }
 
-    public static void main(String[] agrs) throws InterruptedException {
-        Client c = new Client("wss://stream.binance.com:9443/ws/btcusdt@depth", "https://www.binance.com/api/v1/depth?symbol=BTCUSDT");
-        c.add_messageHandler();
-        c.connect();
-        Thread.currentThread().join();
 
-    }
+
+
+
+
+
+
+
+//    public static void main(String[] agrs) throws InterruptedException {
+//        Client c = new Client("wss://stream.binance.com:9443/ws/btcusdt@depth", "https://www.binance.com/api/v1/depth?symbol=BTCUSDT");
+//        c.generate__messageHandler();
+//        c.connect();
+//        Thread.currentThread().join();
+//
+//    }
 }
 

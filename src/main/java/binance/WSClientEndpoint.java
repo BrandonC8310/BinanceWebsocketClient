@@ -9,97 +9,20 @@ import javax.websocket.*;
  *
  * @author Jiji_Sasidharan
  */
-@javax.websocket.ClientEndpoint
-public abstract class WSClientEndpoint {
+
+public abstract class WSClientEndpoint extends Endpoint {
 
     Session userSession = null;
     String endpointURI;
     URI uri;
     WebSocketContainer container;
-    MessageHandler messageHandler;
+    MyMessageHandler messageHandler;
+    protected boolean closed = false;
 
 
     public WSClientEndpoint(String endpointURI) {
        this.endpointURI = endpointURI;
     }
-
-    /**
-     * Callback hook for Connection open events.
-     *
-     * @param userSession the userSession which is opened.
-     */
-    @OnOpen
-    public abstract void onOpen(Session userSession);
-
-
-
-    /**
-     * Callback hook for Connection close events.
-     *
-     * @param userSession the userSession which is getting closed.
-     * @param reason the reason for connection close
-     */
-    @OnClose
-    public abstract void onClose(Session userSession, CloseReason reason);
-
-
-    /**
-     * Callback hook for Connection error events.
-     *
-     * @param userSession the userSession which has exception occurred.
-     * @param th the exception which is occurred.
-     */
-    @OnError
-    public void onError(Session userSession, Throwable th) {
-        System.out.println("Exception occurred ...\n" + th + "\n" );
-        th.printStackTrace();
-        this.userSession = userSession;
-    }
-
-
-
-    /**
-     * Callback hook for Message Events. This method will be invoked when a client send a message.
-     *
-     * @param message The text message
-     */
-    @OnMessage
-    public abstract void onMessage(String message) throws IOException;
-//    {
-//        if (this.messageHandler != null) {
-//            this.messageHandler.handleMessage(message);
-//        }
-//    }
-
-    /**
-     * register message handler
-     *
-     * @param msgHandler
-     */
-    public void addMessageHandler(MessageHandler msgHandler) {
-        this.messageHandler = msgHandler;
-    }
-
-    /**
-     * Send a message.
-     *
-     * @param message
-     */
-    public void sendMessage(String message) {
-        this.userSession.getAsyncRemote().sendText(message);
-    }
-
-    /**
-     * Message handler.
-     *
-     * @author Jiji_Sasidharan
-     */
-    public interface MessageHandler {
-
-        void handleMessage(String message) throws IOException;
-    }
-
-
 
     public void connect() {
         try {
@@ -113,6 +36,54 @@ public abstract class WSClientEndpoint {
         }
 
     }
+
+    public void close() throws IOException {
+        this.userSession.close();
+        this.closed = true;
+    }
+
+    public boolean is_closed() {
+        return this.closed;
+    }
+
+    /**
+     * Message handler.
+     *
+     * @author Jiji_Sasidharan
+     */
+
+    public interface MyMessageHandler {
+
+        void handleMessage(String message) throws IOException;
+    }
+
+
+    /**
+     * register message handler
+     *
+     * @param msgHandler
+     */
+    public void add_MessageHandler(MyMessageHandler msgHandler) {
+        this.messageHandler = msgHandler;
+    }
+
+
+
+
+    /**
+     * Send a message.
+     *
+     * @param message
+     */
+    public void send_Message(String message) {
+        this.userSession.getAsyncRemote().sendText(message);
+    }
+
+
+
+
+
+
 
 
 

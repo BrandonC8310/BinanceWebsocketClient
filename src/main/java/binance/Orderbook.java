@@ -25,6 +25,8 @@ public class Orderbook {
     private ArrayList<Order> bids;
     private ArrayList<Order> asks;
 
+    private double total_quantity;
+
     @JsonCreator
     public Orderbook(@JsonProperty("snapshotURI") String snapshotURI)  {
         try {
@@ -78,17 +80,18 @@ public class Orderbook {
             asks.add(new Order("ask", d));
         }
 
+        double i = 0;
+        for (double[] arr : bids_from_JSON) {
+            i += arr[1];
+        }
+        this.total_quantity = i;
+
     }
 
     @Override
     public String toString() {
-//        System.out.println(bids_from_JSON.size());
-//        int i = 0;
-//        for (double[] arr : bids_from_JSON) {
-//            i += arr[1];
-//        }
-//        System.out.println(i);
 
+        System.out.printf("Total amount: %f\n", this.total_quantity);
         Collections.sort(bids);
         Collections.sort(asks);
         return "lastUpdateId: " + lastUpdateId + "\n" +
@@ -97,6 +100,8 @@ public class Orderbook {
     }
 
     public void update_order(Order new_order) {
+
+
 
         if (new_order.is_bid()) {
             boolean find = false;
@@ -126,6 +131,12 @@ public class Orderbook {
             }
         }
 
+        double i = 0;
+        for (double[] arr : bids_from_JSON) {
+            i += arr[1];
+        }
+        this.total_quantity = i;
+
     }
 
     public void remove_and_sort() {
@@ -133,6 +144,14 @@ public class Orderbook {
         asks.removeIf(o -> o.get_quantity() == 0);
         Collections.sort(bids);
         Collections.sort(asks);
+    }
+
+    public double get_total_quantity() {
+        return this.total_quantity;
+    }
+
+    public ArrayList<Order> get_ask_orders() {
+        return asks;
     }
 
 
