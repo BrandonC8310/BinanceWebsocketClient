@@ -25,7 +25,8 @@ public class Orderbook {
     private ArrayList<Order> bids;
     private ArrayList<Order> asks;
 
-    private double total_quantity;
+    private double total_bids_quantity;
+    private double total_asks_quantity;
 
     @JsonCreator
     public Orderbook(@JsonProperty("snapshotURI") String snapshotURI)  {
@@ -43,6 +44,7 @@ public class Orderbook {
 
         }
     }
+
 
 
     public String get_JSON() {
@@ -84,14 +86,19 @@ public class Orderbook {
         for (double[] arr : bids_from_JSON) {
             i += arr[1];
         }
-        this.total_quantity = i;
-
+        this.total_bids_quantity = i;
+        i = 0;
+        for (double[] arr : asks_from_JSON) {
+            i += arr[1];
+        }
+        this.total_asks_quantity = i;
     }
 
     @Override
     public String toString() {
 
-        System.out.printf("Total amount: %f\n", this.total_quantity);
+        System.out.printf("Total bid amount: %f\n", this.total_bids_quantity);
+        System.out.printf("Total ask amount: %f\n", this.total_asks_quantity);
         Collections.sort(bids);
         Collections.sort(asks);
         return "lastUpdateId: " + lastUpdateId + "\n" +
@@ -135,7 +142,12 @@ public class Orderbook {
         for (double[] arr : bids_from_JSON) {
             i += arr[1];
         }
-        this.total_quantity = i;
+        this.total_bids_quantity = i;
+        i = 0;
+        for (double[] arr : asks_from_JSON) {
+            i += arr[1];
+        }
+        this.total_asks_quantity = i;
 
     }
 
@@ -146,12 +158,21 @@ public class Orderbook {
         Collections.sort(asks);
     }
 
-    public double get_total_quantity() {
-        return this.total_quantity;
+    public double get_total_quantity_to_buy() {
+        return this.total_asks_quantity;
+    }
+
+    public double get_total_quantity_to_sell() {
+        return this.total_bids_quantity;
     }
 
     public ArrayList<Order> get_ask_orders() {
         return asks;
+    }
+
+
+    public ArrayList<Order> get_bid_orders() {
+        return bids;
     }
 
 

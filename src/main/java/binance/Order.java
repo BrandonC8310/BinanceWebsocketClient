@@ -9,6 +9,11 @@ public class Order implements Comparable<Order> {
         this.pair = pair;
     }
 
+    public Order(Order original) {
+        this.type = original.type;
+        this.pair = original.pair;
+    }
+
     @Override
     public int compareTo(Order o) {
         if (type.equals("bid")) {

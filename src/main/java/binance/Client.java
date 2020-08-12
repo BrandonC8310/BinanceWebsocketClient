@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.websocket.*;
 import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
 
 
 public abstract class Client extends WSClientEndpoint {
@@ -11,7 +12,8 @@ public abstract class Client extends WSClientEndpoint {
     private Orderbook orderbook = null;
     private boolean first_valid_update = false;
     private long lastUpdateId;
-    private String snapshotURI;
+    private final String snapshotURI;
+
 
 
     public Client(String endpointURI, String snapshotURI) {
@@ -73,6 +75,8 @@ public abstract class Client extends WSClientEndpoint {
 
     public void update_orderbook(UpdateEvent update) {
 
+
+
         for (Order o: update.get_bids()) {
             orderbook.update_order(o);
         }
@@ -81,14 +85,20 @@ public abstract class Client extends WSClientEndpoint {
         }
         orderbook.remove_and_sort();
 
+
     }
 
 
-    public double get_average_price(double quantity) {
+    public double get_average_price_buy(double quantity) {
 
-        if (quantity > this.orderbook.get_total_quantity()) {
+
+
+
+        if (quantity > this.orderbook.get_total_quantity_to_buy()) {
+
             return -1;
         } else if (quantity <= 0) {
+
             return -2;
         }
 
@@ -105,6 +115,7 @@ public abstract class Client extends WSClientEndpoint {
 
             if (accumulated_quantity >= quantity) {
                 total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
+
                 return total / quantity;
             }
 
@@ -115,19 +126,48 @@ public abstract class Client extends WSClientEndpoint {
     }
 
 
+    public double get_average_price_sell(double quantity) {
 
 
 
+        if (quantity > this.orderbook.get_total_quantity_to_sell()) {
+
+            return -1;
+        } else if (quantity <= 0) {
+
+            return -2;
+        }
+
+        double current_price = 0;
+        double current_quantity = 0;
+        double accumulated_quantity = 0;
+        double total = 0;
+
+        for (Order o : orderbook.get_bid_orders()) {
+            current_quantity += o.get_quantity();
+            accumulated_quantity += current_quantity;
+            current_price += o.get_price();
 
 
+            if (accumulated_quantity >= quantity) {
+                total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
 
+                return total / quantity;
+            }
 
-//    public static void main(String[] agrs) throws InterruptedException {
-//        Client c = new Client("wss://stream.binance.com:9443/ws/btcusdt@depth", "https://www.binance.com/api/v1/depth?symbol=BTCUSDT");
-//        c.generate__messageHandler();
-//        c.connect();
-//        Thread.currentThread().join();
-//
-//    }
+            total = current_price * current_quantity;
+        }
+
+        return 0;
+    }
+
+    public double get_total_quantity_to_buy() {
+        return this.orderbook.get_total_quantity_to_buy();
+    }
+
+    public double get_total_quantity_to_sell() {
+        return this.orderbook.get_total_quantity_to_sell();
+    }
+
 }
 

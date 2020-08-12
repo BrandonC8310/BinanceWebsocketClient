@@ -1,160 +1,334 @@
-//package binance;
-//
-//import java.awt.Container;
-//import java.awt.GridLayout;
-//import java.awt.event.ActionEvent;
-//import java.awt.event.ActionListener;
-//import java.awt.event.WindowEvent;
-//
-//import javax.swing.JButton;
-//import javax.swing.JComboBox;
-//import javax.swing.JFrame;
-//import javax.swing.JScrollPane;
-//import javax.swing.JTextArea;
-//import javax.swing.JTextField;
-//
-//import org.java_websocket.client.WebSocketClient;
-//import org.java_websocket.drafts.Draft;
-//import org.java_websocket.drafts.Draft_6455;
-//
-//public class App extends JFrame implements ActionListener {
-//    private static final long serialVersionUID = -6056260699202978657L;
-//
-//    private final JTextField uriField;
-//    private final JButton connect;
-//    private final JButton close;
-//    private final JTextArea ta;
-//    private final JTextField chatField;
-//    private final JComboBox draft;
-//    private WebSocketClient cc;
-//
-//    public App( String defaultlocation ) {
-//        super( "WebSocket Chat Client" );
-//        Container c = getContentPane();
-//        GridLayout layout = new GridLayout();
-//        layout.setColumns( 1 );
-//        layout.setRows( 6 );
-//        c.setLayout( layout );
-//
-//        Draft[] drafts = { new Draft_6455() };
-//        draft = new JComboBox( drafts );
-//        c.add( draft );
-//
-//        uriField = new JTextField();
-//        uriField.setText( defaultlocation );
-//        c.add( uriField );
-//
-//        connect = new JButton( "Connect" );
-//        connect.addActionListener( this );
-//        c.add( connect );
-//
-//        close = new JButton( "Close" );
-//        close.addActionListener( this );
-//        close.setEnabled( false );
-//        c.add( close );
-//
-//        JScrollPane scroll = new JScrollPane();
-//        ta = new JTextArea();
-//        scroll.setViewportView( ta );
-//        c.add( scroll );
-//
-//        chatField = new JTextField();
-//        chatField.setText( "" );
-//        chatField.addActionListener( this );
-//        c.add( chatField );
-//
-//        java.awt.Dimension d = new java.awt.Dimension( 300, 400 );
-//        setPreferredSize( d );
-//        setSize( d );
-//
-//        addWindowListener( new java.awt.event.WindowAdapter() {
-//            @Override
-//            public void windowClosing( WindowEvent e ) {
-//                if( cc != null ) {
-//                    cc.close();
-//                }
-//                dispose();
-//            }
-//        } );
-//
-//        setLocationRelativeTo( null );
-//        setVisible( true );
-//    }
-//
-//    public void actionPerformed( ActionEvent e ) {
-//
-//        if( e.getSource() == chatField ) {
-//            if( cc != null ) {
-//                cc.send( chatField.getText() );
-//                chatField.setText( "" );
-//                chatField.requestFocus();
-//            }
-//
-//        } else if( e.getSource() == connect ) {
-//            try {
-//                // cc = new ChatClient(new URI(uriField.getText()), area, ( Draft ) draft.getSelectedItem() );
-//                cc = new WebSocketClient( new URI( uriField.getText() ), (Draft) draft.getSelectedItem() ) {
-//
-//                    @Override
-//                    public void onMessage( String message ) {
-//                        ta.append( "got: " + message + "\n" );
-//                        ta.setCaretPosition( ta.getDocument().getLength() );
-//                    }
-//
-//                    @Override
-//                    public void onOpen( ServerHandshake handshake ) {
-//                        ta.append( "You are connected to ChatServer: " + getURI() + "\n" );
-//                        ta.setCaretPosition( ta.getDocument().getLength() );
-//                    }
-//
-//                    @Override
-//                    public void onClose( int code, String reason, boolean remote ) {
-//                        ta.append( "You have been disconnected from: " + getURI() + "; Code: " + code + " " + reason + "\n" );
-//                        ta.setCaretPosition( ta.getDocument().getLength() );
-//                        connect.setEnabled( true );
-//                        uriField.setEditable( true );
-//                        draft.setEditable( true );
-//                        close.setEnabled( false );
-//                    }
-//
-//                    @Override
-//                    public void onError( Exception ex ) {
-//                        ta.append( "Exception occurred ...\n" + ex + "\n" );
-//                        ta.setCaretPosition( ta.getDocument().getLength() );
-//                        ex.printStackTrace();
-//                        connect.setEnabled( true );
-//                        uriField.setEditable( true );
-//                        draft.setEditable( true );
-//                        close.setEnabled( false );
-//                    }
-//                };
-//
-//                close.setEnabled( true );
-//                connect.setEnabled( false );
-//                uriField.setEditable( false );
-//                draft.setEditable( false );
-//                cc.connect();
-//            } catch ( URISyntaxException ex ) {
-//                ta.append( uriField.getText() + " is not a valid WebSocket URI\n" );
-//            }
-//        } else if( e.getSource() == close ) {
-//            cc.close();
-//        }
-//    }
-//
-//    public static void main( String[] args ) {
-//        String location;
-//        if( args.length != 0 ) {
-//            location = args[ 0 ];
-//            System.out.println( "Default server url specified: \'" + location + "\'" );
-//        } else {
-////            location = "ws://localhost:8887";
-//
-//            location = "wss://stream.binance.com:9443/ws/btcusdt@depth";
-//
-//            System.out.println( "Default server url not specified: defaulting to \'" + location + "\'" );
-//        }
-//        new App( location );
-//    }
-//
-//}
+package binance;
+
+import javax.swing.*;
+import javax.websocket.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.io.IOException;
+import java.util.concurrent.locks.ReentrantLock;
+
+@javax.websocket.ClientEndpoint
+public class App extends JFrame implements ActionListener{
+    private final ReentrantLock lock = new ReentrantLock();
+    private final JTextArea description;
+    private static final int GAP = 2;
+    private final JButton connect;
+    private final JButton close;
+    private final JButton buy;
+    private final JButton sell;
+
+    private final JTextField input_area;
+    private final JTextArea display_area;
+
+    private final JComboBox drop_down_list;
+    private Client client;
+
+    private GridBagConstraints gbc = new GridBagConstraints();
+    private GridBagLayout gbLayout = new GridBagLayout();
+
+    private JPanel mainPanel;
+
+
+    public App() {
+        super("Binance Local Order Book");
+
+        mainPanel = new JPanel();
+        mainPanel.setLayout(gbLayout);
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        this.setContentPane(mainPanel);
+        GridBagConstraints gbc = new GridBagConstraints();
+
+
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.insets = new Insets(GAP, GAP, GAP, GAP);
+        gbc.gridwidth = 2;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        gbc.gridx = 0;
+        description = new JTextArea();
+        description.setText( "Instruction:\n1. Choose the market\n" );
+        description.append( "2. Click Connect\n" );
+        description.append( "3. Enter the amount\n" );
+        description.append( "4. Click \"Buy\" or \"Sell\" to place order\n" );
+        description.append( "5. Read the average weighted price\n" );
+        description.append( "6. Repeat or click Close to close connection" );
+        mainPanel.add(description, gbc);
+
+
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        String[] options = {"BTC-USDT", "Others"};
+        drop_down_list = new JComboBox( options );
+        mainPanel.add(drop_down_list, gbc);
+
+
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        connect = new JButton( "Connect" );
+        connect.addActionListener( this );
+        mainPanel.add(connect, gbc);
+
+
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        input_area = new JTextField();
+        input_area.setText( "Please enter the quantity of BTC:  " );
+        mainPanel.add(input_area, gbc);
+
+
+
+        gbc.gridwidth = 1;
+        gbc.gridx = 0;
+        buy = new JButton( "Buy" );
+        buy.addActionListener( this );
+        mainPanel.add(buy, gbc);
+
+
+        sell = new JButton( "Sell" );
+        sell.addActionListener( this );
+        gbc.gridx+=1;
+        mainPanel.add(sell, gbc);
+
+
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        JScrollPane scroll = new JScrollPane();
+        display_area = new JTextArea();
+        scroll.setViewportView(display_area);
+        display_area.setEditable(false);
+        mainPanel.add(scroll, gbc);
+
+
+        gbc.gridwidth = 2;
+        gbc.gridx = 0;
+        close = new JButton( "Close" );
+        close.addActionListener( this );
+        close.setEnabled( false );
+        mainPanel.add(close, gbc);
+
+
+
+
+
+
+
+
+        java.awt.Dimension d = new java.awt.Dimension( 600, 800 );
+        setPreferredSize( d );
+        setSize( d );
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.setVisible(true);
+        setLocationRelativeTo( null );
+
+
+
+
+
+        addWindowListener( new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing( WindowEvent e ) {
+
+                if (client != null) {
+                    if(!client.is_closed()) {
+                        try {
+                            client.close();
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
+                        }
+                    }
+                }
+                dispose();
+                System.exit(0);
+            }
+        } );
+    }
+
+
+
+    /**
+     * Invoked when an action occurs.
+     *
+     * @param e the event to be processed
+     */
+    @Override
+    public void actionPerformed(ActionEvent e) {
+
+        if( e.getSource() == buy ) {
+            if (client != null) {
+                if (!client.is_closed()) {
+
+                    try {
+                        lock.lock();
+                        StringBuilder sb = new StringBuilder(input_area.getText());
+                        sb.delete(0, 34);
+                        double quantity = Double.parseDouble(sb.toString());
+                        double average_price = client.get_average_price_buy(quantity);
+                        String result;
+                        if (average_price == -1) {
+                            // exceed capacity
+                            result = String.format("Max quantity available is %f, please enter an amount less that %f\n", client.get_total_quantity_to_buy(), client.get_total_quantity_to_buy());
+                        } else if (average_price == -2) {
+                            // negative value / 0
+                            result = "please enter an positive value\n";
+                        } else {
+                            result = String.format("The weighted average price of buying %f BTCs is $%f\n", quantity, average_price);
+                        }
+                        display_area.setText(result);
+                        display_area.requestFocus();
+                    } finally {
+                        lock.unlock();
+                    }
+
+
+                }
+            }
+
+
+        } else if ( e.getSource() == sell ) {
+
+            if (client != null) {
+                if (!client.is_closed()) {
+
+                    try {
+                        lock.lock();
+                        StringBuilder sb = new StringBuilder(input_area.getText());
+                        sb.delete(0, 34);
+                        double quantity = Double.parseDouble(sb.toString());
+                        double average_price = client.get_average_price_sell(quantity);
+                        String result;
+                        if (average_price == -1) {
+                            // exceed capacity
+                            result = String.format("Max quantity available is %f, please enter an amount less that %f\n", client.get_total_quantity_to_sell(), client.get_total_quantity_to_sell());
+                        } else if (average_price == -2) {
+                            // negative value / 0
+                            result = "please enter an positive value\n";
+                        } else {
+                            result = String.format("The weighted average price of selling %f BTCs is $%f\n", quantity, average_price);
+                        }
+                        display_area.setText(result);
+                        display_area.requestFocus();
+                    } finally {
+                        lock.unlock();
+                    }
+
+                }
+            }
+
+
+        } else if( e.getSource() == connect ) {
+
+
+            client = new Client("wss://stream.binance.com:9443/ws/btcusdt@depth", "https://www.binance.com/api/v1/depth?symbol=BTCUSDT&limit=1000")
+
+
+
+
+            {
+
+                /**
+                 * Developers must implement this method to be notified when a new conversation has
+                 * just begun.
+                 *
+                 * @param userSession the session that has just been activated.
+                 * @param config  the configuration used to configure this endpoint.
+                 */
+                @Override
+                public void onOpen(Session userSession, EndpointConfig config) {
+                    System.out.println("Connected to Binance");
+                    display_area.setText("Connected to Binance\n");
+                    display_area.setCaretPosition( display_area.getDocument().getLength() );
+
+
+                    userSession.addMessageHandler(new MessageHandler.Whole<String>() {
+                        /**
+                         * Called when the message has been fully received.
+                         *
+                         * @param message the message data.
+                         */
+                        @Override
+                        public void onMessage(String message) {
+                            if (messageHandler != null) {
+                                try {
+                                    lock.lock();
+                                    messageHandler.handleMessage(message);
+                                } catch (IOException ioException) {
+                                    ioException.printStackTrace();
+                                } finally {
+                                    lock.unlock();
+                                }
+                            }
+                        }
+                    });
+
+
+
+                    this.userSession = userSession;
+
+                }
+
+
+                @Override
+                @OnClose
+                public void onClose(Session userSession, CloseReason reason) {
+                    System.out.println("Disconnected to Binance");
+                    this.userSession = null;
+
+                    display_area.setText("Disconnected to Binance" );
+                    display_area.setCaretPosition(display_area.getDocument().getLength() );
+                    connect.setEnabled( true );
+                    close.setEnabled( false );
+                }
+
+
+
+
+                @Override
+                public void onError( Session userSession, Throwable th) {
+                    System.out.println("Exception occurred ...\n" + th + "\n" );
+                    th.printStackTrace();
+                    this.userSession = userSession;
+                    display_area.append( "Exception occurred ...\n" + th + "\n" );
+                    display_area.setCaretPosition( display_area.getDocument().getLength() );
+                    th.printStackTrace();
+                    connect.setEnabled( true );
+                    close.setEnabled( false );
+                }
+            };
+
+            close.setEnabled( true );
+            connect.setEnabled( false );
+            drop_down_list.setEditable( false );
+            client.generate__messageHandler();
+            client.connect();
+
+        } else if( e.getSource() == close ) {
+            try {
+                client.close();
+            } catch (IOException ioException) {
+                ioException.printStackTrace();
+            }
+        }
+
+
+
+
+    }
+
+
+
+
+
+    public static void main(String[] args) {
+        new App();
+    }
+
+
+
+}
