@@ -107,9 +107,6 @@ public class Orderbook {
     }
 
     public void update_order(Order new_order) {
-
-
-
         if (new_order.is_bid()) {
             boolean find = false;
             for (Order o : bids) {
@@ -137,7 +134,6 @@ public class Orderbook {
                 asks.add(new_order);
             }
         }
-
         double i = 0;
         for (double[] arr : bids_from_JSON) {
             i += arr[1];

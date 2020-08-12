@@ -31,16 +31,18 @@ public class App extends JFrame implements ActionListener{
     private JPanel mainPanel;
 
 
+
     public App() {
         super("Binance Local Order Book");
 
+        // display window
         mainPanel = new JPanel();
         mainPanel.setLayout(gbLayout);
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
         this.setContentPane(mainPanel);
         GridBagConstraints gbc = new GridBagConstraints();
 
-
+        // instruction area
         gbc.anchor = GridBagConstraints.WEST;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(GAP, GAP, GAP, GAP);
@@ -58,15 +60,16 @@ public class App extends JFrame implements ActionListener{
         mainPanel.add(description, gbc);
 
 
+        // drop down list
         gbc.fill = GridBagConstraints.BOTH;
         gbc.gridwidth = 2;
         gbc.gridx = 0;
-        String[] options = {"BTC-USDT", "Others"};
+        String[] options = {"BTC - USDT", "Others - not implemented"};
         drop_down_list = new JComboBox( options );
         mainPanel.add(drop_down_list, gbc);
 
 
-
+        // Connect button
         gbc.gridwidth = 2;
         gbc.gridx = 0;
         connect = new JButton( "Connect" );
@@ -74,7 +77,7 @@ public class App extends JFrame implements ActionListener{
         mainPanel.add(connect, gbc);
 
 
-
+        // input area
         gbc.gridwidth = 2;
         gbc.gridx = 0;
         input_area = new JTextField();
@@ -82,7 +85,7 @@ public class App extends JFrame implements ActionListener{
         mainPanel.add(input_area, gbc);
 
 
-
+        // Buy button
         gbc.gridwidth = 1;
         gbc.gridx = 0;
         buy = new JButton( "Buy" );
@@ -90,13 +93,14 @@ public class App extends JFrame implements ActionListener{
         mainPanel.add(buy, gbc);
 
 
+        // Sell button
         sell = new JButton( "Sell" );
         sell.addActionListener( this );
         gbc.gridx+=1;
         mainPanel.add(sell, gbc);
 
 
-
+        // display area
         gbc.gridwidth = 2;
         gbc.gridx = 0;
         JScrollPane scroll = new JScrollPane();
@@ -106,18 +110,13 @@ public class App extends JFrame implements ActionListener{
         mainPanel.add(scroll, gbc);
 
 
+        // Close Button
         gbc.gridwidth = 2;
         gbc.gridx = 0;
         close = new JButton( "Close" );
         close.addActionListener( this );
         close.setEnabled( false );
         mainPanel.add(close, gbc);
-
-
-
-
-
-
 
 
         java.awt.Dimension d = new java.awt.Dimension( 600, 800 );
@@ -130,7 +129,7 @@ public class App extends JFrame implements ActionListener{
 
 
 
-
+        // close window operation
         addWindowListener( new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing( WindowEvent e ) {
@@ -227,9 +226,6 @@ public class App extends JFrame implements ActionListener{
 
             client = new Client("wss://stream.binance.com:9443/ws/btcusdt@depth", "https://www.binance.com/api/v1/depth?symbol=BTCUSDT&limit=1000")
 
-
-
-
             {
 
                 /**
@@ -240,12 +236,13 @@ public class App extends JFrame implements ActionListener{
                  * @param config  the configuration used to configure this endpoint.
                  */
                 @Override
+                @OnOpen
                 public void onOpen(Session userSession, EndpointConfig config) {
                     System.out.println("Connected to Binance");
                     display_area.setText("Connected to Binance\n");
                     display_area.setCaretPosition( display_area.getDocument().getLength() );
 
-
+                    // define the operation on message
                     userSession.addMessageHandler(new MessageHandler.Whole<String>() {
                         /**
                          * Called when the message has been fully received.
@@ -253,6 +250,7 @@ public class App extends JFrame implements ActionListener{
                          * @param message the message data.
                          */
                         @Override
+                        @OnMessage
                         public void onMessage(String message) {
                             if (messageHandler != null) {
                                 try {
@@ -266,14 +264,15 @@ public class App extends JFrame implements ActionListener{
                             }
                         }
                     });
-
-
-
                     this.userSession = userSession;
 
                 }
 
-
+                /**
+                 * When a connection is closed
+                 * @param userSession he session that has just been activated.
+                 * @param reason the reason the session was closed.
+                 */
                 @Override
                 @OnClose
                 public void onClose(Session userSession, CloseReason reason) {
@@ -287,9 +286,16 @@ public class App extends JFrame implements ActionListener{
                 }
 
 
-
-
+                /**
+                 * Developers may implement this method when the web socket session creates
+                 * some kind of error that is not modeled in the web socket protocol.
+                 * This may for example be a notification that an incoming message is
+                 * too big to handle, or that the incoming message could not be encoded.
+                 * @param userSession the session in use when the error occurs.
+                 * @param th the throwable representing the problem.
+                 */
                 @Override
+                @OnError
                 public void onError( Session userSession, Throwable th) {
                     System.out.println("Exception occurred ...\n" + th + "\n" );
                     th.printStackTrace();

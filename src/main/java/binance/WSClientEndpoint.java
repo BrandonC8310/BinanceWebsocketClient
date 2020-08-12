@@ -4,19 +4,14 @@ import java.io.IOException;
 import java.net.URI;
 import javax.websocket.*;
 
-/**
- * ChatServer Client
- *
- * @author Jiji_Sasidharan
- */
 
 public abstract class WSClientEndpoint extends Endpoint {
 
-    Session userSession = null;
-    String endpointURI;
-    URI uri;
-    WebSocketContainer container;
-    MyMessageHandler messageHandler;
+    protected Session userSession = null;
+    protected String endpointURI;
+    protected URI uri;
+    protected WebSocketContainer container;
+    protected MyMessageHandler messageHandler;
     protected boolean closed = false;
 
 
@@ -24,6 +19,10 @@ public abstract class WSClientEndpoint extends Endpoint {
        this.endpointURI = endpointURI;
     }
 
+
+    /**
+     * Connect to the server
+     */
     public void connect() {
         try {
             uri = new URI(this.endpointURI);
@@ -37,23 +36,29 @@ public abstract class WSClientEndpoint extends Endpoint {
 
     }
 
+
+    /**
+     * Close the connection
+     * @throws IOException
+     */
     public void close() throws IOException {
         this.userSession.close();
         this.closed = true;
     }
 
+
+    /**
+     *  Check if the connection is closed
+     * @return is closed or not
+     */
     public boolean is_closed() {
         return this.closed;
     }
 
     /**
      * Message handler.
-     *
-     * @author Jiji_Sasidharan
      */
-
     public interface MyMessageHandler {
-
         void handleMessage(String message) throws IOException;
     }
 
@@ -61,33 +66,11 @@ public abstract class WSClientEndpoint extends Endpoint {
     /**
      * register message handler
      *
-     * @param msgHandler
+     * @param msgHandler the message handler object
      */
     public void add_MessageHandler(MyMessageHandler msgHandler) {
         this.messageHandler = msgHandler;
     }
-
-
-
-
-    /**
-     * Send a message.
-     *
-     * @param message
-     */
-    public void send_Message(String message) {
-        this.userSession.getAsyncRemote().sendText(message);
-    }
-
-
-
-
-
-
-
-
-
-
 
 
 }

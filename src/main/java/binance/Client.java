@@ -24,6 +24,11 @@ public abstract class Client extends WSClientEndpoint {
 
     }
 
+
+
+    /**
+     *  Define the message handler, implement interface WSClientEndpoint.MyMessageHandler
+     */
     public void generate__messageHandler() {
 
         WSClientEndpoint.MyMessageHandler messageHandler = message -> {
@@ -44,24 +49,19 @@ public abstract class Client extends WSClientEndpoint {
 
             if (!this.first_valid_update) {
                 if (update.get_first_id() <= lastUpdateId + 1 && update.get_final_id() >= lastUpdateId + 1) {
-//                    System.out.println("process this update");
                     lastUpdateId = update.get_final_id();
                     orderbook.set_lastUpdateId(lastUpdateId);
                     this.first_valid_update = true;
                     update_orderbook(update);
                     System.out.println(orderbook);
-                } else {
-//                    System.out.println("discard update");
                 }
 
             } else if (update.get_first_id() == lastUpdateId + 1) {
-//                System.out.println("process this update");
+
                 update_orderbook(update);
                 lastUpdateId = update.get_final_id();
                 orderbook.set_lastUpdateId(lastUpdateId);
                 System.out.println(orderbook);
-            } else {
-                System.out.println("Out of sync, abort");
             }
 
         };
@@ -70,12 +70,11 @@ public abstract class Client extends WSClientEndpoint {
     }
 
 
-
-
-
+    /**
+     * Update the local order book regarding the update event
+     * @param update the incoming update event
+     */
     public void update_orderbook(UpdateEvent update) {
-
-
 
         for (Order o: update.get_bids()) {
             orderbook.update_order(o);
@@ -89,10 +88,13 @@ public abstract class Client extends WSClientEndpoint {
     }
 
 
+
+    /**
+     *
+     * @param quantity the quantity being brought
+     * @return the weighted average price
+     */
     public double get_average_price_buy(double quantity) {
-
-
-
 
         if (quantity > this.orderbook.get_total_quantity_to_buy()) {
 
@@ -126,10 +128,12 @@ public abstract class Client extends WSClientEndpoint {
     }
 
 
+    /**
+     *
+     * @param quantity the quantity being sold
+     * @return the weighted average price
+     */
     public double get_average_price_sell(double quantity) {
-
-
-
         if (quantity > this.orderbook.get_total_quantity_to_sell()) {
 
             return -1;
@@ -137,7 +141,6 @@ public abstract class Client extends WSClientEndpoint {
 
             return -2;
         }
-
         double current_price = 0;
         double current_quantity = 0;
         double accumulated_quantity = 0;
@@ -147,8 +150,6 @@ public abstract class Client extends WSClientEndpoint {
             current_quantity += o.get_quantity();
             accumulated_quantity += current_quantity;
             current_price += o.get_price();
-
-
             if (accumulated_quantity >= quantity) {
                 total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
 
@@ -157,14 +158,22 @@ public abstract class Client extends WSClientEndpoint {
 
             total = current_price * current_quantity;
         }
-
         return 0;
     }
 
+
+    /**
+     *
+     * @return The total quantity in ask orders
+     */
     public double get_total_quantity_to_buy() {
         return this.orderbook.get_total_quantity_to_buy();
     }
 
+
+    /**
+     * @return The total quantity in bid orders
+     */
     public double get_total_quantity_to_sell() {
         return this.orderbook.get_total_quantity_to_sell();
     }

@@ -9,10 +9,6 @@ public class Order implements Comparable<Order> {
         this.pair = pair;
     }
 
-    public Order(Order original) {
-        this.type = original.type;
-        this.pair = original.pair;
-    }
 
     @Override
     public int compareTo(Order o) {
@@ -34,7 +30,6 @@ public class Order implements Comparable<Order> {
     public void set_quantity(double d) {
         pair[1] = d;
     }
-
 
     public boolean is_bid() {
         return type.equals("bid");
