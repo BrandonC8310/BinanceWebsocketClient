@@ -52,10 +52,10 @@ public class App extends JFrame implements ActionListener{
         gbc.gridx = 0;
         description = new JTextArea();
         description.setText( "Instruction:\n1. Choose the market\n" );
-        description.append( "2. Click Connect\n" );
+        description.append( "2. Click \"Connect\"\n" );
         description.append( "3. Enter the amount\n" );
-        description.append( "4. Click \"Buy\" or \"Sell\" to place order\n" );
-        description.append( "5. Read the average weighted price\n" );
+        description.append( "4. Click \"Buy\" or \"Sell\"\n" );
+        description.append( "5. Read the weighted average price\n" );
         description.append( "6. Repeat or click Close to close connection" );
         mainPanel.add(description, gbc);
 
