@@ -1,38 +1,45 @@
 package binance;
 
-public class Order implements Comparable<Order> {
-    private final String type;
-    private final double[] pair;
+import binance.Constants.OrderSide;
 
-    public Order(String type, double[] pair) {
-        this.type = type;
-        this.pair = pair;
+public class Order implements Comparable<Order> {
+    private final OrderSide side;
+    private final double price;
+    private double quantity;
+
+    public Order(OrderSide side, double price, double quantity) {
+        this.side = side;
+        this.price = price;
+        this.quantity = quantity;
     }
 
 
     @Override
     public int compareTo(Order o) {
-        if (type.equals("bid")) {
-            return Double.compare(o.get_price(), this.pair[0]); // descending
-        } else {
-            return Double.compare(this.pair[0], o.get_price()); // ascending
+        switch (side) {
+            case ASK:
+                return Double.compare(this.price, o.get_price()); // ascending
+            case BID:
+                return Double.compare(o.get_price(), this.price); // descending
+            default:
+                return -1;
         }
     }
 
     public double get_price() {
-        return pair[0];
+        return this.price;
     }
 
     public double get_quantity() {
-        return pair[1];
+        return this.quantity;
+    }
+
+    public OrderSide get_type() {
+        return this.side;
     }
 
     public void set_quantity(double d) {
-        pair[1] = d;
-    }
-
-    public boolean is_bid() {
-        return type.equals("bid");
+        this.quantity = d;
     }
 
 }

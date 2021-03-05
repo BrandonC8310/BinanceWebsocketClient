@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.ArrayList;
+import static binance.Constants.OrderSide;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class UpdateEvent {
@@ -53,7 +54,7 @@ public class UpdateEvent {
 
         ArrayList<Order> bids = new ArrayList<Order>();
         for (double[] d : bids_from_JSON) {
-            bids.add(new Order("bid", d));
+            bids.add(new Order(OrderSide.BID, d[0], d[1]));
         }
 
         return bids;
@@ -63,7 +64,7 @@ public class UpdateEvent {
 
         ArrayList<Order> asks = new ArrayList<Order>();
         for (double[] d : asks_from_JSON) {
-            asks.add(new Order("ask", d));
+            asks.add(new Order(OrderSide.ASK, d[0], d[1]));
         }
 
         return asks;

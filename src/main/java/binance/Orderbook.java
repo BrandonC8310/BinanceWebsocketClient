@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
+import binance.Constants.OrderSide;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Orderbook {
@@ -74,12 +74,12 @@ public class Orderbook {
     public void set_orders() {
         bids = new ArrayList<Order>();
         for (double[] d : bids_from_JSON) {
-            bids.add(new Order("bid", d));
+            bids.add(new Order(OrderSide.BID, d[0], d[1]));
         }
 
         asks = new ArrayList<Order>();
         for (double[] d : asks_from_JSON) {
-            asks.add(new Order("ask", d));
+            asks.add(new Order(OrderSide.ASK, d[0], d[1]));
         }
 
         double i = 0;
@@ -107,33 +107,38 @@ public class Orderbook {
     }
 
     public void update_order(Order new_order) {
-        if (new_order.is_bid()) {
-            boolean find = false;
-            for (Order o : bids) {
-                if (o.get_price() == new_order.get_price()) {
-                    o.set_quantity(new_order.get_quantity());
-                    find = true;
-                    break;
+        switch (new_order.get_type())
+        {
+            case BID:
+                boolean find = false;
+                for (Order o : bids) {
+                    if (o.get_price() == new_order.get_price()) {
+                        o.set_quantity(new_order.get_quantity());
+                        find = true;
+                        break;
+                    }
                 }
-            }
 
-            if (!find) {
-                bids.add(new_order);
-            }
-
-        } else {
-            boolean find = false;
-            for (Order o : asks) {
-                if (o.get_price() == new_order.get_price()) {
-                    o.set_quantity(new_order.get_quantity());
-                    find = true;
-                    break;
+                if (!find) {
+                    bids.add(new_order);
                 }
-            }
-            if (!find) {
-                asks.add(new_order);
-            }
+                break;
+
+            case ASK:
+                find = false;
+                for (Order o : asks) {
+                    if (o.get_price() == new_order.get_price()) {
+                        o.set_quantity(new_order.get_quantity());
+                        find = true;
+                        break;
+                    }
+                }
+                if (!find) {
+                    asks.add(new_order);
+                }
+                break;
         }
+
         double i = 0;
         for (double[] arr : bids_from_JSON) {
             i += arr[1];

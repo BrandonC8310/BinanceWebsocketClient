@@ -8,6 +8,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.concurrent.locks.ReentrantLock;
+import static binance.Constants.EXCEED_CAPACITY;
+import static binance.Constants.NON_POSITIVE;
 
 @javax.websocket.ClientEndpoint
 public class App extends JFrame implements ActionListener{
@@ -168,12 +170,12 @@ public class App extends JFrame implements ActionListener{
                         StringBuilder sb = new StringBuilder(input_area.getText());
                         sb.delete(0, 34);
                         double quantity = Double.parseDouble(sb.toString());
-                        double average_price = client.get_average_price_buy(quantity);
+                        double average_price = client.get_average_price(quantity, Constants.OrderSide.ASK);
                         String result;
-                        if (average_price == -1) {
+                        if (average_price == EXCEED_CAPACITY) {
                             // exceed capacity
                             result = String.format("Max quantity available is %f, please enter an amount less that %f\n", client.get_total_quantity_to_buy(), client.get_total_quantity_to_buy());
-                        } else if (average_price == -2) {
+                        } else if (average_price == NON_POSITIVE) {
                             // negative value / 0
                             result = "please enter an positive value\n";
                         } else {
@@ -200,7 +202,7 @@ public class App extends JFrame implements ActionListener{
                         StringBuilder sb = new StringBuilder(input_area.getText());
                         sb.delete(0, 34);
                         double quantity = Double.parseDouble(sb.toString());
-                        double average_price = client.get_average_price_sell(quantity);
+                        double average_price = client.get_average_price(quantity, Constants.OrderSide.BID);
                         String result;
                         if (average_price == -1) {
                             // exceed capacity

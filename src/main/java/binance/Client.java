@@ -1,11 +1,8 @@
 package binance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import javax.websocket.*;
-import java.io.IOException;
-import java.util.concurrent.locks.ReentrantLock;
-
+import static binance.Constants.EXCEED_CAPACITY;
+import static binance.Constants.NON_POSITIVE;
 
 public abstract class Client extends WSClientEndpoint {
 
@@ -14,16 +11,12 @@ public abstract class Client extends WSClientEndpoint {
     private long lastUpdateId;
     private final String snapshotURI;
 
-
-
     public Client(String endpointURI, String snapshotURI) {
         // open websocket
         super(endpointURI);
 
         this.snapshotURI = snapshotURI;
-
     }
-
 
 
     /**
@@ -91,76 +84,47 @@ public abstract class Client extends WSClientEndpoint {
 
     /**
      *
-     * @param quantity the quantity being brought
+     * @param target_qty the quantity being bought or sold
      * @return the weighted average price
      */
-    public double get_average_price_buy(double quantity) {
+    public double get_average_price(double target_qty, Constants.OrderSide side) {
 
-        if (quantity > this.orderbook.get_total_quantity_to_buy()) {
+        double accumulated_cost = 0;
+        double remaining_qty = target_qty;
 
-            return -1;
-        } else if (quantity <= 0) {
-
-            return -2;
-        }
-
-        double current_price = 0;
-        double current_quantity = 0;
-        double accumulated_quantity = 0;
-        double total = 0;
-
-        for (Order o : orderbook.get_ask_orders()) {
-            current_quantity += o.get_quantity();
-            accumulated_quantity += current_quantity;
-            current_price += o.get_price();
-
-
-            if (accumulated_quantity >= quantity) {
-                total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
-
-                return total / quantity;
+        if (side == Constants.OrderSide.ASK) {
+            if (target_qty > this.orderbook.get_total_quantity_to_buy()) {
+                return EXCEED_CAPACITY;
+            } else if (target_qty <= 0) {
+                return NON_POSITIVE;
             }
-
-            total = current_price * current_quantity;
-        }
-
-        return 0;
-    }
-
-
-    /**
-     *
-     * @param quantity the quantity being sold
-     * @return the weighted average price
-     */
-    public double get_average_price_sell(double quantity) {
-        if (quantity > this.orderbook.get_total_quantity_to_sell()) {
-
-            return -1;
-        } else if (quantity <= 0) {
-
-            return -2;
-        }
-        double current_price = 0;
-        double current_quantity = 0;
-        double accumulated_quantity = 0;
-        double total = 0;
-
-        for (Order o : orderbook.get_bid_orders()) {
-            current_quantity += o.get_quantity();
-            accumulated_quantity += current_quantity;
-            current_price += o.get_price();
-            if (accumulated_quantity >= quantity) {
-                total += (quantity - (accumulated_quantity - current_quantity)) * current_price;
-
-                return total / quantity;
+            for (Order o : orderbook.get_ask_orders()) {
+                if (remaining_qty > 0) {
+                    double order_qty = Math.min(o.get_quantity(), remaining_qty);
+                    accumulated_cost += o.get_price() * order_qty;
+                    remaining_qty -= order_qty;
+                } else {
+                    return accumulated_cost / target_qty;
+                }
             }
-
-            total = current_price * current_quantity;
+        } else {
+            if (target_qty > this.orderbook.get_total_quantity_to_sell()) {
+                return EXCEED_CAPACITY;
+            } else if (target_qty <= 0) {
+                return NON_POSITIVE;
+            }
+            for (Order o : orderbook.get_bid_orders()) {
+                if (remaining_qty > 0) {
+                    double order_qty = Math.min(o.get_quantity(), remaining_qty);
+                    accumulated_cost += o.get_price() * order_qty;
+                    remaining_qty -= order_qty;
+                } else {
+                    return accumulated_cost / target_qty;
+                }
+            }
         }
         return 0;
     }
-
 
     /**
      *
